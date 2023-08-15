@@ -34,7 +34,7 @@ pipeline {
 			        """
 			        sshagent(credentials: ['ubuntu']) {
 				        sh "ssh -o StrictHostKeyChecking=no ubuntu@ec2-18-140-55-135.ap-southeast-1.compute.amazonaws.com '''${remoteCommandsStart}'''"
-				        sleep(time: 1, unit: 'MINUTES')
+				        sleep(time: 10, unit: 'MINUTES')
 				        sh "ssh -o StrictHostKeyChecking=no ubuntu@ec2-18-140-55-135.ap-southeast-1.compute.amazonaws.com '''${remoteCommandsStop}'''"
 			        }
 		        }
