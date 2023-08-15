@@ -1,7 +1,7 @@
 pipeline {
     agent {
         docker {
-            image 'node:16-buster-slim' 
+            image 'node:16' 
             args '-p 3000:3000' 
         }
     }
@@ -16,12 +16,29 @@ pipeline {
                 sh './jenkins/scripts/test.sh'
             }
         }
-         stage('Deploy') {
-            steps {
-                sh './jenkins/scripts/deliver.sh'
-                input message: 'Sudah selesai menggunakan React App? (Klik "Proceed" untuk mengakhiri)'
-                sh './jenkins/scripts/kill.sh'
+        stage('Manual Approval'){
+            steps{
+                input message: 'Lanjutkan ke tahap Deploy?'
             }
+        }
+        stage('Deploy') {
+	        steps {
+		        script {
+			        def remoteCommandsStart = """
+				        cd /home/ubuntu/a428-cicd-labs/
+				        git pull origin react-app
+				        pm2 start npm --name "react-app" -- start
+			        """
+			        def remoteCommandsStop = """
+				        pm2 stop react-app
+			        """
+			        sshagent(credentials: ['ubuntu']) {
+				        sh "ssh -o StrictHostKeyChecking=no ubuntu@ec2-18-140-55-135.ap-southeast-1.compute.amazonaws.com '''${remoteCommandsStart}'''"
+				        sleep(time: 1, unit: 'MINUTES')
+				        sh "ssh -o StrictHostKeyChecking=no ubuntu@ec2-18-140-55-135.ap-southeast-1.compute.amazonaws.com '''${remoteCommandsStop}'''"
+			        }
+		        }
+	        }
         }
     }
 }
