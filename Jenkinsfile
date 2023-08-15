@@ -22,17 +22,24 @@ pipeline {
             }
         }
         stage('Deploy') {
-            steps {
-                script {
-                    sshagent(credentials: ['ubuntu']) {
-                        sh 'ssh -o StrictHostKeyChecking=no ubuntu@18.140.55.135 cd /home/ubuntu/a428-cicd-labs/ && git remote set-url origin /home/ubuntu/a428-cicd-labs && git pull origin react-app'
-                        sh 'ssh -o StrictHostKeyChecking=no ubuntu@18.140.55.135 sh /home/ubuntu/a428-cicd-labs/jenkins/scripts/deliver.sh'
-                        sleep(time: 1, unit: 'MINUTES')
-                        sh 'ssh -o StrictHostKeyChecking=no ubuntu@18.140.55.135 sh /home/ubuntu/a428-cicd-labs/jenkins/scripts/kill.sh'
-                    }
-                }
-            }
-        }
+	steps {
+		script {
+			def remoteCommandsStart = """
+				cd /home/ubuntu/a428-cicd-labs/
+				git pull origin react-app
+				pm2 start npm --name "react-app" -- start
+			"""
+			def remoteCommandsStop = """
+				pm2 stop react-app
+			"""
+			sshagent(credentials: ['ubuntu']) {
+				sh "ssh -o StrictHostKeyChecking=no ec2-18-140-55-135.ap-southeast-1.compute.amazonaws.com '''${remoteCommandsStart}'''"
+				sleep(time: 1, unit: 'MINUTES')
+				sh "ssh -o StrictHostKeyChecking=no ec2-18-140-55-135.ap-southeast-1.compute.amazonaws.com '''${remoteCommandsStop}'''"
+			}
+		}
+	}
+}
     }
 }
 /*sshagent(['mfajrizulfa']){
